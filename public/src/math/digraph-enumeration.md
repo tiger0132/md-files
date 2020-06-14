@@ -1,3 +1,8 @@
+---
+title: 符号化方法和有向图计数
+abstract: 论文翻译：arxiv1903.09454
+---
+
 # Symbolic method and directed graph enumeration
 
 [论文链接](https://arxiv.org/abs/1903.09454)
@@ -45,7 +50,7 @@ $${\rm A}(z,w,\textbf{\textit u})=\sum_{n,\textbf{\textit p}}a_{n,\textbf{\texti
 
 **定义 2.2** 我们定义 $\mathcal A$ 和 $\mathcal B$ 的 **arrow product** 为一个包含图对 $(a,b)$ 的族 $\mathcal C$，其中 $a\in\mathcal A,b\in\mathcal B$（对图进行了重标号，使得 $a,b$ 有不交的标号），且 $a,b$ 之间有任意的，从 $a$ 到 $b$ 的有向边。
 
-![](figure1.svg)  
+![](digraph-enumeration/figure1.svg)  
 图一：arrow product。点的标号省略。
 
 **命题 2.3** $\mathcal A$ 和 $\mathcal B$ 的 arrow product 的 GGF 等于 ${\bf A}(z,w){\bf B}(z,w)$。

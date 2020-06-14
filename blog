@@ -1,0 +1,83 @@
+#!/usr/bin/env node
+
+const express = require('express');
+const path = require('path');
+const yaml = require('js-yaml');
+const fs = require('fs');
+const fm = require('front-matter');
+var app = express();
+
+function serve(port) {
+	app.use('/src', express.static(path.join(__dirname, 'src')));
+	app.use('/', express.static(path.join(__dirname, 'public')));
+	app.listen(port, () => console.log(`start server on: ${port}`));
+}
+
+function generateFile(path, rel_path) {
+	var cur_fm = fm(fs.readFileSync(path, 'utf8')).attributes;
+	var ret = {
+		type: 'file',
+		path: rel_path,
+		name: cur_fm.title,
+	}
+	if (cur_fm.abstract) ret.abstract = cur_fm.abstract;
+	return ret;
+}
+function generateDir(obj, path, rel_path) {
+	var ret = {
+		type: 'dir',
+		path: rel_path,
+		name: obj.name,
+		files: {}
+	};
+	if (obj.abstract) ret.abstract = abstract;
+	if (obj.subdirs)
+		for (var i of obj.subdirs)
+			ret.files[i.path] = generateDir(i, path + '/' + i.path, rel_path + '/' + i.path);
+	for (var i of fs.readdirSync(path, { withFileTypes: true }))
+		if (i.isFile())
+			ret.files[i.name] = generateFile(path + '/' + i.name, rel_path + '/' + i.name);
+	if (!Object.keys(ret.files).length) delete ret.files;
+	return ret;
+}
+function generateRoot(obj, path, rel_path) {
+	var ret = {
+		type: 'root',
+		path: '/',
+		files: {}
+	};
+	if (obj.subdirs)
+		for (var i of obj.subdirs)
+			ret.files[i.path] = generateDir(i, path + '/' + i.path, rel_path + '/' + i.path);
+	for (var i of fs.readdirSync(path, { withFileTypes: true }))
+		if (i.isFile() && i.name !== 'config.yml')
+			ret.files[i.name] = generateFile(path + '/' + i.name, path + '/' + i.name);
+	if (!Object.keys(ret.files).length) delete ret.files;
+	return ret;
+}
+
+require('yargs')
+	.usage('Usage: $0 <command> [options]')
+	.command(['server [port]', 's'], 'start the server',
+		yargs => {
+			yargs.positional('port', {
+				describe: 'port to bind on',
+				default: 2055
+			})
+		},
+		argv => serve(argv.port)
+	)
+	.example('$0 server 2333', 'start the server on port 2333')
+
+	.command(['generate', 'g'], 'generate files',
+		argv => {
+			const obj = yaml.safeLoad(fs.readFileSync(path.join(__dirname, 'src/config.yml'), 'utf8'));
+			var resultJson = generateRoot(obj, path.join(__dirname, 'src'), '');
+			fs.writeFileSync(path.join(__dirname, 'public/index.json'), JSON.stringify(resultJson), 'utf8');
+			console.log('generated');
+		}
+	)
+
+	.alias('h', 'help')
+	.locale('en')
+	.argv;
