@@ -5,6 +5,7 @@ const path = require('path');
 const yaml = require('js-yaml');
 const fs = require('fs');
 const fm = require('front-matter');
+const cp = require('child_process');
 var app = express();
 
 function serve(port) {
@@ -75,6 +76,18 @@ require('yargs')
 			var resultJson = generateRoot(obj, path.join(__dirname, 'src'), '');
 			fs.writeFileSync(path.join(__dirname, 'public/index.json'), JSON.stringify(resultJson), 'utf8');
 			console.log('generated');
+		}
+	)
+
+	.command(['deploy', 'd'], 'deploy files',
+		argv => {
+			cp.exec('git commit -m "$(date +\'Blog updated: %F %T\')"', { cwd: path.join(__dirname, 'public') }, (err, stdout, stderr) => {
+				if (err) {
+					console.log(err);
+					return;
+				}
+				console.log(`stdout: ${stdout}`);
+			});
 		}
 	)
 
