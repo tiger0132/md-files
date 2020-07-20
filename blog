@@ -1,0 +1,120 @@
+#!/usr/bin/env node
+
+const express = require('express');
+const path = require('path');
+const yaml = require('js-yaml');
+const fs = require('fs');
+const fm = require('front-matter');
+const cp = require('child_process');
+var app = express();
+
+function serve(port) {
+	app.use('/src', express.static(path.join(__dirname, 'src')));
+	app.use('/', express.static(path.join(__dirname, 'public')));
+	app.listen(port, () => console.log(`start server on: ${port}`));
+}
+
+function generateFile(path, rel_path) {
+	var cur_fm = fm(fs.readFileSync(path, 'utf8')).attributes;
+	if (cur_fm.hidden) return;
+	var ret = {
+		type: 'file',
+		path: rel_path,
+		name: cur_fm.title,
+		time: new Date(fs.statSync(path).mtimeMs)
+	}
+	if (cur_fm.abstract) ret.abstract = cur_fm.abstract;
+	return ret;
+}
+function generateDir(obj, path, rel_path) {
+	var ret = {
+		type: 'dir',
+		path: rel_path,
+		name: obj.name,
+		files: {},
+		time: new Date(fs.statSync(path).mtimeMs)
+	};
+	if (obj.abstract) ret.abstract = abstract;
+	if (obj.subdirs)
+		for (var i in obj.subdirs) {
+			var data = generateDir(obj.subdirs[i], path + '/' + i, rel_path + '/' + i);
+			ret.files[i] = data;
+			ret.time = data.time > ret.time ? data.time : ret.time;
+		}
+	for (var i of fs.readdirSync(path, { withFileTypes: true }))
+		if (i.isFile()) {
+			var data = generateFile(path + '/' + i.name, rel_path + '/' + i.name);
+			ret.files[i.name] = data;
+			ret.time = data.time > ret.time ? data.time : ret.time;
+		}
+	if (!Object.keys(ret.files).length) delete ret.files;
+	return ret;
+}
+function generateRoot(obj, path, rel_path) {
+	var ret = {
+		type: 'root',
+		path: '/',
+		files: {}
+	};
+	if (obj.subdirs)
+		for (var i in obj.subdirs)
+			ret.files[i] = generateDir(obj.subdirs[i], path + '/' + i, rel_path + '/' + i);
+	for (var i of fs.readdirSync(path, { withFileTypes: true }))
+		if (i.isFile() && i.name !== 'config.yml')
+			ret.files[i.name] = generateFile(path + '/' + i.name, path + '/' + i.name);
+	if (!Object.keys(ret.files).length) delete ret.files;
+	return ret;
+}
+
+function deploy() {
+	cp.exec('git add .; git commit -m "$(date +\'Blog updated: %F %T\')"; git push', { cwd: path.join(__dirname, 'public') }, (err, stdout, stderr) => {
+		if (err) {
+			console.log(err);
+			return;
+		}
+		console.log(`stdout: ${stdout}`);
+	});
+}
+
+require('yargs')
+	.usage('Usage: $0 <command> [options]')
+	.command(['server [port]', 's'], 'start the server',
+		yargs => {
+			yargs.positional('port', {
+				describe: 'port to bind on',
+				default: 2055
+			})
+		},
+		argv => serve(argv.port)
+	)
+	.example('$0 server 2333', 'start the server on port 2333')
+
+	.command(['generate', 'g'], 'generate files',
+		yargs => yargs
+			.option('deploy', {
+				alias: 'd',
+				describe: 'deploy after generation',
+				type: 'boolean'
+			})
+			.option('server', {
+				alias: 's',
+				describe: 'host after generation',
+				type: 'string'
+			}),
+		argv => {
+			const obj = yaml.safeLoad(fs.readFileSync(path.join(__dirname, 'src/config.yml'), 'utf8'));
+			var resultJson = generateRoot(obj, path.join(__dirname, 'src'), '');
+			fs.writeFileSync(path.join(__dirname, 'public/index.json'), JSON.stringify(resultJson), 'utf8');
+			console.log('generated ');
+			if (argv.deploy) deploy();
+			if (argv.server !== undefined) serve(argv.server ? parseInt(argv.server) : 2055);
+		}
+	)
+
+	.command(['deploy', 'd'], 'deploy files',
+		argv => deploy()
+	)
+
+	.alias('h', 'help')
+	.locale('en')
+	.argv;

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" type="text/css" href="lib/semantic/semantic.min.css">
+    <script src="lib/jquery/jquery.min.js"></script>
+    <script src="lib/semantic/semantic.min.js"></script>
+    <script src="lib/tablesort/tablesort.js"></script>
+
+    <script src="lib/katex/katex.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="lib/katex/katex.min.css">
+
+    <script src="lib/highlight.js/highlight.pack.js"></script>
+    <link rel="stylesheet" type="text/css" href="lib/highlight.js/styles/vs2015.css">
+
+    <script src="lib/markdown-it/markdown-it.min.js"></script>
+    <script src="js/render/markdown-it-katex-fixed.js"></script>
+    <script src="js/render/markdown-it-front-matter.js"></script>
+    <script src="js/render/markdown-it-container.js"></script>
+
+    <script src="js/index.js"></script>
+    <script src="js/util.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/search.js"></script>
+
+    <style>
+        code, pre, kbd {
+            tab-size: 4;
+        }
+    </style>
+
+    <script language="javascript">
+        $(document).ready(() => {
+            $('table').tablesort();
+
+            $('#search-box').keydown(function (e) {
+                if (e.keyCode !== 13) return;
+
+                routeUrl.searchParams.set('keyword', $('#search-input')[0].value);
+                location.hash = routeUrl.pathname + routeUrl.search;
+
+                $(this).search('set value', '');
+                $(this).search('hide results');
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <div class="ui container segment">
+        <div id="search-container">
+            <div class="ui search" id="search-box">
+                <div class="ui icon input">
+                    <input class="prompt" type="text" id="search-input" placeholder="文件名 / 标题 ...">
+                    <i class="search icon"></i>
+                </div>
+                <div class="results"></div>
+            </div>
+            <div id="search-filters-row" style="margin-top: 20px;">
+                <b>搜索条件</b>
+            </div>
+            <div id="search-options-row" style="margin-top: 20px;">
+                <b>搜索选项</b>
+            </div>
+            <div id="display-options-row" style="margin-top: 20px;">
+                <b>预览选项</b>
+            </div>
+        </div>
+        <div id="files-container" style="margin-top: 15px;">
+            <table class="ui sortable striped selectable table">
+                <thead id="table-head">
+                    <tr>
+                        <th class="collapsing" style="min-width: 50%;">名称</th>
+                        <th>简介</th>
+                        <th class="left aligned collapsing">最后更新</th>
+                    </tr>
+                </thead>
+                <tbody id="dir">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="ui container segment" id="file-content" style="display: none;">
+    </div>
+</body>
+
+</html>

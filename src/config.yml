@@ -1,0 +1,12 @@
+subdirs:
+  algo:
+    name: 算法
+  math:
+    name: 数学
+  sol:
+    name: 题解
+    subdirs:
+      Codeforces:
+        name: Codeforces
+  misc:
+    name: 杂项
