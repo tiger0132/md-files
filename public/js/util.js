@@ -14,6 +14,14 @@ function isAbs(path) {
 	if (/^[--9\w?@%&+~#=]*:/.test(path)) return true;
 	return false;
 }
+function restoreScroll() {
+	const scrollpos = sessionStorage.getItem('scrollpos');
+	if (scrollpos) {
+		console.log('scroll');
+		window.scrollTo(0, scrollpos);
+		sessionStorage.removeItem('scrollpos');
+	}
+}
 
 // table
 function appendRow(type, name, abstract, path, time, color, pos) {

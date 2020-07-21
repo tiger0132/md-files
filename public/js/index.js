@@ -4,7 +4,7 @@ var rootData, curData;
 
 var isSearchResult;
 
-function main() {
+async function main() {
 	try {
 		renderClear();
 
@@ -14,7 +14,8 @@ function main() {
 		displayContent = traverseBlogs(curData, routeParams.get('disp_subdir') || false);
 
 		searchMain();
-		renderPage();
+		await renderPage();
+		setTimeout(restoreScroll, 100);
 	} catch (e) {
 		if (e === 'no redirect') {
 			console.log('[fe] aborted');

@@ -24,7 +24,9 @@
     <script src="js/search.js"></script>
 
     <style>
-        code, pre, kbd {
+        code,
+        pre,
+        kbd {
             tab-size: 4;
         }
     </style>
@@ -43,6 +45,8 @@
                 $(this).search('hide results');
             });
         });
+        window.onbeforeunload = e => 
+            sessionStorage.setItem('scrollpos', window.scrollY);
     </script>
 </head>
 

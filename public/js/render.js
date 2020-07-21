@@ -1,4 +1,9 @@
-function renderFile(data) {
+async function renderFile(data) {
+	$('#file-content').html(`
+<div class="ui active text loader">Loading</div>
+<div style="height: 7rem"></div>`);
+	$('#file-content').show();
+
 	var md = markdownit({
 		highlight: function (str, lang) {
 			if (lang && hljs.getLanguage(lang)) {
@@ -9,24 +14,75 @@ function renderFile(data) {
 				} catch (__) { }
 			}
 			return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
-		}
+		},
+		html: true
 	})
 		.use(math_plugin)
-		.use(front_matter_plugin, data => { });
-	$.get('src' + data.path).then(content => {
-		var html = $(md.render(content));
-		var img = $('img', html);
-		for (var i of img) {
-			var src = $(i).attr('src');
-			if (!isAbs(src)) {
-				$(i).attr('src', `/src${routePath}/../${src}`);
-				console.log(`${src} -> /src${routePath}/../${src}`);
+		.use(front_matter_plugin, data => { })
+		.use(container_plugin, 'spoiler', {
+			validate: function (params) {
+				return params.trim().match(/^spoiler\s+(.*)$/);
+			},
+			render: function (tokens, idx) {
+				var m = tokens[idx].info.trim().match(/^spoiler\s+(.*)$/);
+				if (tokens[idx].nesting === 1) {
+					return `
+<p>
+	<div class="ui styled fluid accordion">
+		<div class="title">
+			<i class="dropdown icon"></i>${md.utils.escapeHtml(m[1])}
+		</div>
+		<div class="content">`;
+				} else {
+					return '</div></div></p>\n';
+				}
 			}
+		})
+		.use(container_plugin, 'dividerL', {
+			validate: function (params) {
+				return params.trim().startsWith('dividerL');
+			},
+			render: function (tokens, idx) {
+				if (tokens[idx].nesting === 1) {
+					return `
+<div class="ui segment">
+	<div class="ui two column very relaxed grid">
+		<div class="column">`;
+				} else {
+					return '</div><div class="column">\n';
+				}
+			}
+		})
+		.use(container_plugin, 'dividerR', {
+			tmp: 'ze',
+			validate: function (params) {
+				return params.trim().startsWith('dividerR');
+			},
+			render: function (tokens, idx) {
+				var m = tokens[idx].info.trim().match(/^dividerR\s+(.*)$/);
+				console.log(tokens[idx].nesting, m);
+				if (tokens[idx].nesting === 1) {
+					tmp = md.utils.escapeHtml(m[1]);
+					return '';
+				} else {
+					return `</div></div><div class="ui vertical divider">${tmp}</div></div>\n`;
+				}
+			}
+		});
+	const content = await $.get('src' + data.path);
+	var html = $(md.render(content));
+	var img = $('img', html);
+	for (var i of img) {
+		var src = $(i).attr('src');
+		if (!isAbs(src)) {
+			$(i).attr('src', `/src${routePath}/../${src}`);
+			console.log(`${src} -> /src${routePath}/../${src}`);
 		}
-		// TODO: <a>
-		$('#file-content').html(html);
-		$('#file-content').show();
-	});
+	}
+
+	// TODO: <a>
+	$('#file-content').html(html);
+	console.log('rendered');
 }
 
 function renderClear() {
@@ -40,7 +96,7 @@ function renderClear() {
 	appendTag('filter', '', 'x', '没有搜索条件', '');
 }
 
-function renderPage() {
+async function renderPage() {
 	console.log('[fe] renderPage()');
 	if (curData.type !== 'root') {
 		appendRow('dir', '/', '', '/' + (routeUrl.search || ''), '', '', 'data-topmost');
@@ -48,7 +104,7 @@ function renderPage() {
 	}
 
 	if (curData.type === 'file')
-		renderFile(curData);
+		await renderFile(curData);
 	else if (curData.type === 'dir' || curData.type === 'root')
 		for (var i of displayContent)
 			appendData(i, isSearchResult ? '' : routeUrl.search);
