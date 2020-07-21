@@ -61,35 +61,33 @@ for (int i = n - 2; i >= 0; i--)
 
 ## 洛谷 P5410 【模板】扩展 KMP（Z 函数）
 
-板子。匹配其它串和匹配自己的做法十分类似，具体见代码。
+板子。`b#a` 的 Z 函数的后 $|b|$ 项就是 $p$ 的权值。
 
 ```cpp
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
 
-const int N = 2e7 + 72;
+const int N = 4e7 + 74;
 
-int z[N], p[N], n, m;
 char a[N], b[N];
+int n, m, z[N];
 long long ans;
 int main() {
 	scanf("%s%s", a, b);
-	n = strlen(a), m = strlen(b);
+	b[n = strlen(b)] = '#';
+	strcat(b, a);
+	m = strlen(b);
 	for (int i = 1, l = 0, r = 0; i < m; i++) {
 		if (i <= r) z[i] = std::min(z[i - l], r - i + 1);
 		while (i + z[i] < m && b[i + z[i]] == b[z[i]]) z[i]++;
 		if (i + z[i] - 1 > r) l = i, r = i + z[i] - 1;
 	}
-	z[0] = m;
-	for (int i = 0; i < m; i++) ans ^= (i + 1ll) * (z[i] + 1);
+	z[0] = n;
+	for (int i = 0; i < n; i++) ans ^= (i + 1ll) * (z[i] + 1);
 	printf("%lld\n", ans);
-	for (int i = 0, l = 0, r = -1; i < n; i++) {
-		if (i <= r) p[i] = std::min(z[i - l], r - i + 1);
-		while (i + p[i] < n && a[i + p[i]] == b[p[i]]) p[i]++;
-		if (i + p[i] - 1 > r) l = i, r = i + p[i] - 1;
-	}
-	for (int i = ans = 0; i < n; i++) ans ^= (i + 1ll) * (p[i] + 1);
+	ans = 0;
+	for (int i = n + 1; i < m; i++) ans ^= (i - n) * (z[i] + 1ll);
 	printf("%lld\n", ans);
 }
 ```
@@ -99,5 +97,94 @@ int main() {
 板子。直接用 Z 算法匹配，然后把 Z 函数转成前缀函数。
 
 ```cpp
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
 
+const int N = 2e6 + 62;
+
+int z[N], p[N], n, m;
+char a[N], b[N];
+int main() {
+	scanf("%s%s", b, a);
+	a[n = strlen(a)] = '#';
+	strcat(a, b);
+	m = strlen(a);
+	for (int i = 1, l = 0, r = 0; i < m; i++) {
+		if (i <= r) z[i] = std::min(z[i - l], r - i + 1);
+		while (i + z[i] < m && a[i + z[i]] == a[z[i]]) z[i]++;
+		if (i + z[i] - 1 > r) l = i, r = i + z[i] - 1;
+	}
+	for (int i = n + 1; i < m; i++)
+		if (z[i] == n) printf("%d\n", i - n);
+	for (int i = 1; i < n; i++) p[i + z[i] - 1] = std::max(p[i + z[i] - 1], z[i]);
+	for (int i = n - 2; i >= 0; i--) p[i] = std::max(p[i], p[i + 1] - 1);
+	for (int i = 0; i < n; i++) printf("%d%c", p[i], " \n"[i == n - 1]);
+}
+```
+
+# CF 1313E Concatenation with intersection
+
+首先，$a[l_1\ldots r_1]$ 一定是 $s$ 的前缀，$b[l_2\ldots r_2]$ 一定是 $s$ 的后缀。
+
+然后我们可以用 Z 算法求出 $a$ 每一个后缀和 $s_{0\ldots n-2}$ 的 LCP，以及 $b$ 每一个前缀和 $s_{1,\ldots n-1}$ 的 LCS（最长公共后缀），设它们为 $za_i,zb_i$。
+
+然后考虑枚举两个点 $i,j$，它们对应的区间是 $[i,i+za_i-1],[j-zb_j+1,j]$。这两个区间对答案有贡献的条件是 $i\le j\le i+m-2$ 且 $za_i+zb_j-m+1>0$，对答案的贡献是 $za_i+zb_j-m+1)$。
+
+然后就是二维数点了，开两个 BIT 搞一下就行了。
+
+```cpp
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
+
+const int N = 2e6 + 62;
+
+void getZ(char *s, int *z) {
+	int n = strlen(s);
+	for (int i = 1, l = 0, r = 0; i < n; i++) {
+		if (i <= r) z[i] = std::min(z[i - l], r - i + 1);
+		while (i + z[i] < n && s[i + z[i]] == s[z[i]]) z[i]++;
+		if (i + z[i] - 1 > r) l = i, r = i + z[i] - 1;
+	}
+}
+
+struct {
+	long long tr[N * 2];
+	void add(int i, int x) {
+		for (i++; i < N; i += i & -i) tr[i] += x;
+	}
+	long long qry(int i) {
+		long long r = 0;
+		for (i++; i > 0; i -= i & -i) r += tr[i];
+		return r;
+	}
+} b1, b2;
+
+int n, m, saz[N], sbz[N], *za, *zb;
+char a[N], b[N], sa[N], sb[N];
+long long ans;
+int main() {
+	scanf("%d%d%s%s%s", &n, &m, a, b, sb);
+	strcpy(sa, sb);
+	std::reverse(sb, sb + m);
+	sa[m - 1] = sb[m - 1] = '#';
+	std::reverse(b, b + n);
+	strcat(sa, a), strcat(sb, b);
+	getZ(sa, saz), getZ(sb, sbz);
+	za = saz + m;
+	zb = sbz + m;
+	std::reverse(zb, zb + n);
+	for (int j = 0; j < m - 1; j++) b1.add(zb[j], 1), b2.add(zb[j], zb[j]);
+	for (int i = 0; i < n; i++) {
+		long long v1 = b1.qry(N - 1) - b1.qry(m - za[i] - 1);
+		long long v2 = b2.qry(N - 1) - b2.qry(m - za[i] - 1);
+
+		ans += v1 * (za[i] - m + 1ll) + v2;
+
+		b1.add(zb[i], -1), b2.add(zb[i], -zb[i]);
+		if (i + m - 1 < n) b1.add(zb[i + m - 1], 1), b2.add(zb[i + m - 1], zb[i + m - 1]);
+	}
+	printf("%lld\n", ans);
+}
 ```
