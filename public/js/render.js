@@ -82,6 +82,7 @@ async function renderFile(data) {
 
 	// TODO: <a>
 	$('#file-content').html(html);
+	$('.accordion').accordion();
 	console.log('rendered');
 }
 
