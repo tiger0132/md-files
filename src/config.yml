@@ -8,5 +8,7 @@ subdirs:
     subdirs:
       Codeforces:
         name: Codeforces
+      Luogu:
+        name: 洛谷
   misc:
     name: 杂项
