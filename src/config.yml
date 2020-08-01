@@ -10,5 +10,7 @@ subdirs:
         name: Codeforces
       Luogu:
         name: 洛谷
+      AtCoder:
+        name: AtCoder
   misc:
     name: 杂项
