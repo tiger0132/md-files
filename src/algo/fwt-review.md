@@ -153,6 +153,22 @@ $$
 
 这次我找不到实际意义了，告辞
 
+## XNOR 卷积
+
+真值表：$\begin{bmatrix}1&0\\0&1\end{bmatrix}$。
+
+$$
+\begin{cases}
+f(0,0)^2=f(0,1),\quad f(0,1)^2=f(0,1),\quad f(0,0)f(0,1)=f(0,0)\\
+f(1,0)^2=f(1,1),\quad f(1,1)^2=f(1,1),\quad f(1,0)f(1,1)=f(1,0)\\
+f(0,0)f(1,1)-f(0,1)f(1,0)\ne0
+\end{cases}
+$$
+
+然后可以得到两个可行的矩阵 $\begin{bmatrix}-1&1\\1&1\end{bmatrix},\begin{bmatrix}1&1\\-1&1\end{bmatrix}$，它们的逆分别是 $\begin{bmatrix}-0.5&0.5\\0.5&0.5\end{bmatrix},\begin{bmatrix}0.5&-0.5\\0.5&0.5\end{bmatrix}$。
+
+还是找不到实际意义
+
 ## IMPLY 卷积
 
 真值表：$\begin{bmatrix}1&1\\0&1\end{bmatrix}$。
