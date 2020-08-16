@@ -12,5 +12,5 @@ subdirs:
         name: 洛谷
       AtCoder:
         name: AtCoder
-  misc:
-    name: 杂项
+  # misc:
+  #   name: 杂项
